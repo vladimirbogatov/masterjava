@@ -13,6 +13,8 @@ public class MailService {
     private static final String INTERRUPTED_BY_TIMEOUT = "+++ Interrupted by timeout";
     private static final String INTERRUPTED_EXCEPTION = "+++ InterruptedException";
 
+    private int success = 0;
+
     private final ExecutorService mailExecutor = Executors.newFixedThreadPool(8);
 
     public GroupResult sendToList(final String template, final Set<String> emails) throws Exception {
@@ -22,6 +24,35 @@ public class MailService {
                 .map(email -> completionService.submit(() -> sendToUser(template, email)))
                 .collect(Collectors.toList());
 
+        List<MailResult> failed = new ArrayList<>();
+
+        while (!futures.isEmpty()) {
+            try {
+                Future<MailResult> future = completionService.poll(10, TimeUnit.SECONDS);
+                if (future == null) {
+                    return cancelWithFail(INTERRUPTED_BY_TIMEOUT, futures, failed);
+                }
+                futures.remove(future);
+                MailResult mailResult = future.get();
+                if (mailResult.isOk()) {
+                    success++;
+                } else {
+                    failed.add(mailResult);
+                    if (failed.size() >= 5) {
+                        return cancelWithFail(INTERRUPTED_BY_FAULTS_NUMBER, futures, failed);
+                    }
+                }
+            } catch (ExecutionException e) {
+                return cancelWithFail(e.getCause().toString(), futures, failed);
+            } catch (InterruptedException e) {
+                return cancelWithFail(INTERRUPTED_EXCEPTION, futures, failed);
+            }
+        }
+
+        mailExecutor.shutdown();
+
+        return new GroupResult(success, failed, null);
+/*
         return new Callable<GroupResult>() {
             private int success = 0;
             private List<MailResult> failed = new ArrayList<>();
@@ -72,6 +103,7 @@ public class MailService {
                     }
                 }
 */
+        /*
                 return new GroupResult(success, failed, null);
             }
 
@@ -80,12 +112,19 @@ public class MailService {
                 return new GroupResult(success, failed, cause);
             }
         }.call();
+    */
+    }
+
+    GroupResult cancelWithFail(String cause, List<Future<MailResult>> futures, List<MailResult> failed) {
+        futures.forEach(f -> f.cancel(true));
+        return new GroupResult(success, failed, cause);
     }
 
     // dummy realization
     public MailResult sendToUser(String template, String email) throws Exception {
         try {
             Thread.sleep(500);  //delay
+            System.out.println("\n" + "thread: "+ Thread.currentThread().getName() + "\n" + "e-mail: " + email + "\n" + "template: " + template );
         } catch (InterruptedException e) {
             // log cancel;
             return null;
