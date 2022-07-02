@@ -7,8 +7,10 @@ import ru.javaops.masterjava.xml.schema.Project;
 import ru.javaops.masterjava.xml.schema.User;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
+import javax.xml.stream.events.XMLEvent;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -24,7 +26,7 @@ public class MainXml {
     public MainXml() {
     }
 
-    private List<User> userList(String groupName,String xmlFileName ) throws IOException, JAXBException {
+    private List<User> userList(String groupName, String xmlFileName) throws IOException, JAXBException {
         Payload payload = JAXB_PARSER.unmarshal(
                 Resources.getResource(xmlFileName).openStream());
         List<User> users = payload.getUsers().getUser();
@@ -48,7 +50,24 @@ public class MainXml {
         return group.getName();
     }
 
-    public void printUsersOfGroup(String groupName, String xmlFileName) throws JAXBException, IOException {
+    public void printUsersOfGroupJaxb(String groupName, String xmlFileName) throws JAXBException, IOException {
         userList(groupName, xmlFileName).forEach(System.out::println);
+    }
+
+    public void printUserOfGroupStax(String groupName, String xmlFileName) throws IOException, XMLStreamException {
+        try (StaxStreamProcessor processor =
+                     new StaxStreamProcessor(Resources.getResource(xmlFileName).openStream())) {
+            XMLStreamReader reader = processor.getReader();
+            while (reader.hasNext()) {
+                int event = reader.next();
+                if (event == XMLEvent.START_ELEMENT) {
+                    if ("User".equals(reader.getLocalName())) {
+                        String user = reader.getElementText();
+                        reader.nextTag();
+                        String email = reader.getAttributeValue(null, "flag");
+                    }
+                }
+            }
+        }
     }
 }

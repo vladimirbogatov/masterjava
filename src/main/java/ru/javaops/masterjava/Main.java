@@ -3,6 +3,7 @@ package ru.javaops.masterjava;
 import ru.javaops.masterjava.xml.util.MainXml;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.stream.XMLStreamException;
 import java.io.IOException;
 
 /**
@@ -13,8 +14,11 @@ import java.io.IOException;
  * @link https://github.com/JavaOPs/topjava
  */
 public class Main {
-    public static void main(String[] args) throws JAXBException, IOException {
+    public static void main(String[] args) throws JAXBException, IOException, XMLStreamException {
         MainXml mainXml = new MainXml();
-        mainXml.printUsersOfGroup("topjava01", "payload.xml");
+        mainXml.printUsersOfGroupJaxb("topjava01", "payload.xml");
+        System.out.println("-----------Stax--------------");
+        mainXml.printUserOfGroupStax("topjava01", "payload.xml");
+
     }
 }
