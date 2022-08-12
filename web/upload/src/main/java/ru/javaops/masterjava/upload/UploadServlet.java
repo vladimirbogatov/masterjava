@@ -21,6 +21,7 @@ import static ru.javaops.masterjava.common.web.ThymeleafListener.engine;
 public class UploadServlet extends HttpServlet {
 
     private final UserProcessor userProcessor = new UserProcessor();
+    private final int CHUNCK_SIZE = 5;
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -31,15 +32,16 @@ public class UploadServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
         final WebContext webContext = new WebContext(req, resp, req.getServletContext(), req.getLocale());
-
+        int chunkSize = CHUNCK_SIZE;
         try {
 //            http://docs.oracle.com/javaee/6/tutorial/doc/glraq.html
+            chunkSize = Integer.parseInt(req.getParameter("chunkSize"));
             Part filePart = req.getPart("fileToUpload");
             if (filePart.getSize() == 0) {
                 throw new IllegalStateException("Upload file have not been selected");
             }
             try (InputStream is = filePart.getInputStream()) {
-                List<User> users = userProcessor.process(is);
+                List<User> users = userProcessor.process(is,3);
                 webContext.setVariable("users", users);
                 engine.process("result", webContext, resp.getWriter());
             }

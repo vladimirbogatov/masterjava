@@ -5,7 +5,7 @@ import com.google.common.io.Resources;
 import j2html.tags.ContainerTag;
 import one.util.streamex.StreamEx;
 import ru.javaops.masterjava.xml.schema.ObjectFactory;
-import ru.javaops.masterjava.xml.schema.Payload;
+import ru.javaops.masterjava.xml.schema.*;
 import ru.javaops.masterjava.xml.schema.Project;
 import ru.javaops.masterjava.xml.schema.User;
 import ru.javaops.masterjava.xml.util.*;
@@ -112,7 +112,7 @@ public class MainXml {
 
     private static String toHtml(Set<User> users, String projectName) {
         final ContainerTag table = table().with(
-                tr().with(th("FullName"), th("email")))
+                        tr().with(th("FullName"), th("email")))
                 .attr("border", "1")
                 .attr("cellpadding", "8")
                 .attr("cellspacing", "0");
